@@ -54,8 +54,10 @@ static bool can_beacon_sec_chan(struct wiphy *wiphy,
 	switch (channel_type) {
 	case NL80211_CHAN_HT40PLUS:
 		diff = 20;
+		break;
 	case NL80211_CHAN_HT40MINUS:
 		diff = -20;
+		break;
 	default:
 		return false;
 	}
@@ -97,6 +99,28 @@ int cfg80211_set_freq(struct cfg80211_registered_device *rdev,
 	chan = rdev_freq_to_chan(rdev, freq, channel_type);
 	if (!chan)
 		return -EINVAL;
+
+	/* Both channels should be able to initiate communication */
+	if (wdev && (wdev->iftype == NL80211_IFTYPE_ADHOC ||
+		     wdev->iftype == NL80211_IFTYPE_AP ||
+		     wdev->iftype == NL80211_IFTYPE_AP_VLAN ||
+		     wdev->iftype == NL80211_IFTYPE_MESH_POINT ||
+		     wdev->iftype == NL80211_IFTYPE_P2P_GO)) {
+		switch (channel_type) {
+		case NL80211_CHAN_HT40PLUS:
+		case NL80211_CHAN_HT40MINUS:
+			if (!can_beacon_sec_chan(&rdev->wiphy, chan,
+						 channel_type)) {
+				printk(KERN_DEBUG
+				       "cfg80211: Secondary channel not "
+				       "allowed to initiate communication\n");
+				return -EINVAL;
+			}
+			break;
+		default:
+			break;
+		}
+	}
 
 	result = rdev->ops->set_channel(&rdev->wiphy,
 					wdev ? wdev->netdev : NULL,
