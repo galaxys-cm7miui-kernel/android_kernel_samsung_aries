@@ -35,12 +35,43 @@ rdev_freq_to_chan(struct cfg80211_registered_device *rdev,
 		if (!ht_cap->ht_supported)
 			return NULL;
 
-		if (!(ht_cap->cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40) ||
-		    ht_cap->cap & IEEE80211_HT_CAP_40MHZ_INTOLERANT)
+		if (channel_type != NL80211_CHAN_HT20 &&
+		    (!(ht_cap->cap & IEEE80211_HT_CAP_SUP_WIDTH_20_40) ||
+		    ht_cap->cap & IEEE80211_HT_CAP_40MHZ_INTOLERANT))
 			return NULL;
 	}
 
 	return chan;
+}
+
+static bool can_beacon_sec_chan(struct wiphy *wiphy,
+				struct ieee80211_channel *chan,
+				enum nl80211_channel_type channel_type)
+{
+	struct ieee80211_channel *sec_chan;
+	int diff;
+
+	switch (channel_type) {
+	case NL80211_CHAN_HT40PLUS:
+		diff = 20;
+	case NL80211_CHAN_HT40MINUS:
+		diff = -20;
+	default:
+		return false;
+	}
+
+	sec_chan = ieee80211_get_channel(wiphy, chan->center_freq + diff);
+	if (!sec_chan)
+		return false;
+
+	/* we'll need a DFS capability later */
+	if (sec_chan->flags & (IEEE80211_CHAN_DISABLED |
+			       IEEE80211_CHAN_PASSIVE_SCAN |
+			       IEEE80211_CHAN_NO_IBSS |
+			       IEEE80211_CHAN_RADAR))
+		return false;
+
+	return true;
 }
 
 int cfg80211_set_freq(struct cfg80211_registered_device *rdev,
