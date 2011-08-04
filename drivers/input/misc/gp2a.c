@@ -542,7 +542,7 @@ static int gp2a_i2c_probe(struct i2c_client *client,
 
 	/* hrtimer settings.  we poll for light values using a timer. */
 	hrtimer_init(&gp2a->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
-	gp2a->light_poll_delay = ns_to_ktime(200 * NSEC_PER_MSEC);
+	gp2a->light_poll_delay = ns_to_ktime(1000 * NSEC_PER_MSEC); //increase delay to 1s from 0.2s (5 times per sec)
 	gp2a->timer.function = gp2a_timer_func;
 
 	/* the timer just fires off a work queue request.  we need a thread
@@ -606,6 +606,10 @@ static int gp2a_i2c_probe(struct i2c_client *client,
 	dev_set_drvdata(gp2a->switch_cmd_dev, gp2a);
 
 #ifdef CONFIG_ARIES_NTT
+	/* set initial proximity value as 1 */
+	input_report_abs(gp2a->proximity_input_dev, ABS_DISTANCE, 1);
+	input_sync(gp2a->proximity_input_dev);
+#else
 	/* set initial proximity value as 1 */
 	input_report_abs(gp2a->proximity_input_dev, ABS_DISTANCE, 1);
 	input_sync(gp2a->proximity_input_dev);

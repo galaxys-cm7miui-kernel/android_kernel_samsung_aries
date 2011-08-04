@@ -85,7 +85,11 @@
 #include <plat/jpeg.h>
 #include <plat/clock.h>
 #include <plat/regs-otg.h>
+
+#ifndef CONFIG_SAMSUNG_FASCINATE
 #include <linux/gp2a.h>
+#endif
+
 #include <linux/yas529.h>
 #include <../../../drivers/video/samsung/s3cfb.h>
 #include <linux/sec_jack.h>
@@ -284,7 +288,7 @@ static struct s3cfb_lcd s6e63m0 = {
 	.p_width = 52,
 	.p_height = 86,
 	.bpp = 24,
-	.freq = 60,
+	.freq = 72,
 
 	.timing = {
 		.h_fp = 16,
@@ -304,16 +308,16 @@ static struct s3cfb_lcd s6e63m0 = {
 	},
 };
 
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (12288 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (9900 * SZ_1K)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (12288 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC0 (11264 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC1 (5000 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMC2 (11264 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC0 (36864 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_MFC1 (36864 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_FIMD (S5PV210_LCD_WIDTH * \
 					     S5PV210_LCD_HEIGHT * 4 * \
 					     CONFIG_FB_S3C_NR_BUFFERS)
-#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (8192 * SZ_1K)
-#define  S5PV210_ANDROID_PMEM_MEMSIZE_PMEM (5550 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_JPEG (4096 * SZ_1K)
+#define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_PMEM (2048 * SZ_1K)
 #define  S5PV210_ANDROID_PMEM_MEMSIZE_PMEM_GPU1 (3000 * SZ_1K)
 #define  S5PV210_ANDROID_PMEM_MEMSIZE_PMEM_ADSP (1500 * SZ_1K)
 #define  S5PV210_VIDEO_SAMSUNG_MEMSIZE_TEXTSTREAM (3000 * SZ_1K)
@@ -436,8 +440,12 @@ static struct regulator_consumer_supply ldo3_consumer[] = {
 	REGULATOR_SUPPLY("pd_io", "s3c-usbgadget")
 };
 
+static struct regulator_consumer_supply ldo4_consumer[] = {
+	REGULATOR_SUPPLY("v_adc", NULL),
+};
+
 static struct regulator_consumer_supply ldo5_consumer[] = {
-	REGULATOR_SUPPLY("vtf", NULL),
+	REGULATOR_SUPPLY("vmmc", NULL),
 };
 
 static struct regulator_consumer_supply ldo7_consumer[] = {
@@ -485,6 +493,10 @@ static struct regulator_consumer_supply buck2_consumer[] = {
 	{	.supply	= "vddint", },
 };
 
+static struct regulator_consumer_supply buck3_consumer[] = {
+	REGULATOR_SUPPLY("vdd_ram", NULL),
+};
+
 static struct regulator_consumer_supply buck4_consumer[] = {
 	{	.supply	= "cam_isp_core", },
 };
@@ -520,16 +532,38 @@ static struct regulator_init_data aries_ldo3_data = {
 static struct regulator_init_data aries_ldo4_data = {
 	.constraints	= {
 		.name		= "VADC_3.3V",
-		.min_uV		= 3300000,
-		.max_uV		= 3300000,
+		.min_uV		= 3000000, //3300000
+		.max_uV		= 3000000, //3300000
 		.apply_uV	= 1,
+		.boot_on        = 1,
 		.always_on	= 1,
+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+				  REGULATOR_CHANGE_STATUS,
+		.state_mem      = {
+			.uV     = 3000000,
+			.mode   = REGULATOR_MODE_NORMAL,
+			.disabled = 1,
+		},
+	},
+        .num_consumer_supplies  = ARRAY_SIZE(ldo4_consumer),
+        .consumer_supplies      = ldo4_consumer,
+};
+
+static struct regulator_init_data aries_ldo5_data = {
+	.constraints	= {
+		.name		= "VTF_2.8V",
+		.min_uV		= 2800000,
+		.max_uV		= 2800000,
+		.apply_uV	= 1,
 		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
 			.disabled = 1,
 		},
 	},
+	.num_consumer_supplies	= ARRAY_SIZE(ldo5_consumer),
+	.consumer_supplies	= ldo5_consumer,
 };
+
 
 static struct regulator_init_data aries_ldo7_data = {
 	.constraints	= {
@@ -665,12 +699,15 @@ static struct regulator_init_data aries_ldo16_data = {
 static struct regulator_init_data aries_ldo17_data = {
 	.constraints	= {
 		.name		= "VCC_3.0V_LCD",
-		.min_uV		= 3000000,
-		.max_uV		= 3000000,
+		.min_uV		= 2600000, //3000000
+		.max_uV		= 2600000, //3000000
 		.apply_uV	= 1,
 		.always_on	= 0,
-		.valid_ops_mask = REGULATOR_CHANGE_STATUS,
+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
+                        .uV     = 2600000,
+                        .mode   = REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
 	},
@@ -682,7 +719,7 @@ static struct regulator_init_data aries_buck1_data = {
 	.constraints	= {
 		.name		= "VDD_ARM",
 		.min_uV		= 750000,
-		.max_uV		= 1500000,
+		.max_uV		= 1600000,
 		.apply_uV	= 1,
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
@@ -705,7 +742,7 @@ static struct regulator_init_data aries_buck2_data = {
 		.valid_ops_mask	= REGULATOR_CHANGE_VOLTAGE |
 				  REGULATOR_CHANGE_STATUS,
 		.state_mem	= {
-			.uV	= 1100000,
+			.uV	= 1125000,
 			.mode	= REGULATOR_MODE_NORMAL,
 			.disabled = 1,
 		},
@@ -717,11 +754,21 @@ static struct regulator_init_data aries_buck2_data = {
 static struct regulator_init_data aries_buck3_data = {
 	.constraints	= {
 		.name		= "VCC_1.8V",
-		.min_uV		= 1800000,
-		.max_uV		= 1800000,
+		.min_uV		= 1600000, //1800000
+		.max_uV		= 1600000, //1800000
 		.apply_uV	= 1,
+		.boot_on        = 1,
 		.always_on	= 1,
+		.valid_ops_mask = REGULATOR_CHANGE_VOLTAGE |
+		                  REGULATOR_CHANGE_STATUS,
+		.state_mem      = {
+                        .uV     = 1600000,
+			.mode   = REGULATOR_MODE_NORMAL,
+			.disabled = 1,
+                },
 	},
+        .num_consumer_supplies  = ARRAY_SIZE(buck3_consumer),
+        .consumer_supplies      = buck3_consumer,
 };
 
 static struct regulator_init_data aries_buck4_data = {
@@ -743,6 +790,7 @@ static struct max8998_regulator_data aries_regulators[] = {
 	{ MAX8998_LDO2,  &aries_ldo2_data },
 	{ MAX8998_LDO3,  &aries_ldo3_data },
 	{ MAX8998_LDO4,  &aries_ldo4_data },
+	{ MAX8998_LDO5,  &aries_ldo5_data },
 	{ MAX8998_LDO7,  &aries_ldo7_data },
 	{ MAX8998_LDO8,  &aries_ldo8_data },
 	{ MAX8998_LDO9,  &aries_ldo9_data },
@@ -1189,11 +1237,22 @@ static void touch_keypad_onoff(int onoff)
 		msleep(25);
 }
 
-static void touch_keypad_gpio_sleep(int onoff) {
-	if (onoff == TOUCHKEY_ON)
+static void touch_keypad_gpio_sleep(int onoff){
+	if(onoff == TOUCHKEY_ON){
+		/*
+		 * reconfigure gpio to activate touchkey controller vdd in sleep mode
+		 */
 		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT1);
-	else
+		//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
+	} else {
+		/*
+		 * reconfigure gpio to deactivate touchkey vdd in sleep mode,
+		 * this is the default
+		 */
 		s3c_gpio_slp_cfgpin(_3_GPIO_TOUCH_EN, S3C_GPIO_SLP_OUT0);
+		//s3c_gpio_slp_setpull_updown(_3_GPIO_TOUCH_EN, S3C_GPIO_PULL_NONE);
+	}
+
 }
 
 static const int touch_keypad_code[] = {
@@ -2468,6 +2527,7 @@ static struct i2c_board_info i2c_devs9[] __initdata = {
 	},
 };
 
+#ifndef CONFIG_SAMSUNG_FASCINATE
 static void gp2a_gpio_init(void)
 {
 	int ret = gpio_request(GPIO_PS_ON, "gp2a_power_supply_on");
@@ -2492,12 +2552,19 @@ static struct gp2a_platform_data gp2a_pdata = {
 	.p_out = GPIO_PS_VOUT,
 	.light_adc_value = gp2a_light_adc_value
 };
+#endif
 
 static struct i2c_board_info i2c_devs11[] __initdata = {
+#ifdef CONFIG_SAMSUNG_FASCINATE
+	{
+		I2C_BOARD_INFO("gp2a", (0x88 >> 1)),
+	},
+#else
 	{
 		I2C_BOARD_INFO("gp2a", (0x88 >> 1)),
 		.platform_data = &gp2a_pdata,
 	},
+#endif
 };
 
 static struct yas529_platform_data yas529_pdata = {
@@ -2598,6 +2665,13 @@ struct platform_device sec_device_battery = {
 	.name	= "sec-battery",
 	.id	= -1,
 };
+
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+static struct platform_device opt_gp2a = {
+	.name = "gp2a-opt",
+	.id = -1,
+};
+#endif
 
 static struct platform_device sec_device_rfkill = {
 	.name	= "bt_rfkill",
@@ -3354,19 +3428,11 @@ static struct gpio_init_data aries_init_gpios[] = {
 		.pud	= S3C_GPIO_PULL_DOWN,
 		.drv	= S3C_GPIO_DRVSTR_1X,
 	}, {
-#if defined(CONFIG_SAMSUNG_FASCINATE)
-		.num	= S5PV210_GPH1(3),
-		.cfg	= S3C_GPIO_INPUT,
-		.val	= S3C_GPIO_SETPIN_NONE,
-		.pud	= S3C_GPIO_PULL_DOWN,
-		.drv	= S3C_GPIO_DRVSTR_1X,
-#else
 		.num	= S5PV210_GPH1(3),
 		.cfg	= S3C_GPIO_INPUT,
 		.val	= S3C_GPIO_SETPIN_NONE,
 		.pud	= S3C_GPIO_PULL_NONE,
 		.drv	= S3C_GPIO_DRVSTR_1X,
-#endif
 	}, { /* NFC_IRQ */
 		.num	= S5PV210_GPH1(4),
 		.cfg	= S3C_GPIO_INPUT,
@@ -3386,19 +3452,11 @@ static struct gpio_init_data aries_init_gpios[] = {
 		.pud	= S3C_GPIO_PULL_DOWN,
 		.drv	= S3C_GPIO_DRVSTR_1X,
 	}, {
-#if defined(CONFIG_SAMSUNG_FASCINATE)
-		.num	= S5PV210_GPH1(7), // GPIO_PHONE_ACTIVE
-		.cfg	= S3C_GPIO_INPUT,
-		.val	= S3C_GPIO_SETPIN_NONE,
-		.pud	= S3C_GPIO_PULL_DOWN,
-		.drv	= S3C_GPIO_DRVSTR_1X,
-#else
 		.num	= S5PV210_GPH1(7), // GPIO_PHONE_ACTIVE
 		.cfg	= S3C_GPIO_SFN(0xF),
 		.val	= S3C_GPIO_SETPIN_NONE,
 		.pud	= S3C_GPIO_PULL_NONE,
 		.drv	= S3C_GPIO_DRVSTR_1X,
-#endif
 	},
 
 	// GPH2 ----------------------------
@@ -4019,6 +4077,9 @@ void s3c_config_gpio_table(void)
 			s3c_gpio_set_drvstrength(gpio, aries_init_gpios[i].drv);
 		}
 	}
+#ifdef CONFIG_SAMSUNG_FASCINATE
+	s3c_gpio_set_drvstrength(S5PV210_GPH3(7), S3C_GPIO_DRVSTR_2X); 
+#endif
 }
 
 #define S5PV210_PS_HOLD_CONTROL_REG (S3C_VA_SYS+0xE81C)
@@ -4226,7 +4287,7 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 	// GPG0 ---------------------------------------------------
 	{ S5PV210_GPG0(0), S3C_GPIO_SLP_OUT0,	S3C_GPIO_PULL_NONE},
 	{ S5PV210_GPG0(1), S3C_GPIO_SLP_OUT0,	S3C_GPIO_PULL_NONE},
-#if defined (CONFIG_SAMSUNG_CAPTIVATE)
+#if defined (CONFIG_SAMSUNG_CAPTIVATE) || defined(CONFIG_SAMSUNG_FASCINATE)
   	{ S5PV210_GPG0(2), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_NONE},	// GPIO_ALS_SCL_28V
 #else
   	{ S5PV210_GPG0(2), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	// GPIO_ALS_SCL_28V
@@ -4257,7 +4318,7 @@ static unsigned int aries_sleep_gpio_table[][3] = {
 	// GPG2 ---------------------------------------------------
 	{ S5PV210_GPG2(0), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_T_FLASH_CLK
 	{ S5PV210_GPG2(1), S3C_GPIO_SLP_OUT0,   S3C_GPIO_PULL_NONE},	//GPIO_T_FLASH_CMD
-#if defined (CONFIG_SAMSUNG_CAPTIVATE)
+#if defined (CONFIG_SAMSUNG_CAPTIVATE) || defined(CONFIG_SAMSUNG_FASCINATE)
   	{ S5PV210_GPG2(2), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_NONE},	//GPIO_ALS_SDA_28V
 #else
   	{ S5PV210_GPG2(2), S3C_GPIO_SLP_INPUT,  S3C_GPIO_PULL_DOWN},	//GPIO_ALS_SDA_28V
@@ -4555,7 +4616,11 @@ void s3c_config_sleep_gpio(void)
 {
 	/* setting the alive mode registers */
 	s3c_gpio_cfgpin(S5PV210_GPH0(1), S3C_GPIO_INPUT);
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	s3c_gpio_setpull(S5PV210_GPH0(1), S3C_GPIO_PULL_DOWN);
+#else
 	s3c_gpio_setpull(S5PV210_GPH0(1), S3C_GPIO_PULL_NONE);
+#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH0(3), S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(S5PV210_GPH0(3), S3C_GPIO_PULL_NONE);
@@ -4569,16 +4634,36 @@ void s3c_config_sleep_gpio(void)
 	s3c_gpio_setpull(S5PV210_GPH0(5), S3C_GPIO_PULL_NONE);
 	gpio_set_value(S5PV210_GPH0(5), 0);
 
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	s3c_gpio_cfgpin(S5PV210_GPH1(0), S3C_GPIO_OUTPUT);
+#else
 	s3c_gpio_cfgpin(S5PV210_GPH1(0), S3C_GPIO_INPUT);
+#endif
 	s3c_gpio_setpull(S5PV210_GPH1(0), S3C_GPIO_PULL_DOWN);
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	gpio_set_value(S5PV210_GPH1(0), 0);
+#endif
 
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	s3c_gpio_cfgpin(S5PV210_GPH1(1), S3C_GPIO_INPUT);
+	s3c_gpio_setpull(S5PV210_GPH1(1), S3C_GPIO_PULL_DOWN);
+#else
 	s3c_gpio_cfgpin(S5PV210_GPH1(1), S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(1), S3C_GPIO_PULL_NONE);
 	gpio_set_value(S5PV210_GPH1(1), 0);
+#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH1(2), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(2), S3C_GPIO_PULL_DOWN);
 
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	s3c_gpio_cfgpin(S5PV210_GPH1(4), S3C_GPIO_OUTPUT);
+	s3c_gpio_setpull(S5PV210_GPH1(4), S3C_GPIO_PULL_NONE);
+	gpio_set_value(S5PV210_GPH1(4), 0);
+
+	s3c_gpio_cfgpin(S5PV210_GPH1(5), S3C_GPIO_INPUT);
+	s3c_gpio_setpull(S5PV210_GPH1(5), S3C_GPIO_PULL_DOWN);
+#else
 	s3c_gpio_cfgpin(S5PV210_GPH1(4), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(4), S3C_GPIO_PULL_DOWN);
 
@@ -4588,6 +4673,8 @@ void s3c_config_sleep_gpio(void)
 
 	s3c_gpio_cfgpin(S5PV210_GPH1(6), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(6), S3C_GPIO_PULL_DOWN);
+
+#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH1(7), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH1(7), S3C_GPIO_PULL_NONE);
@@ -4606,13 +4693,21 @@ void s3c_config_sleep_gpio(void)
 
 	s3c_gpio_cfgpin(S5PV210_GPH2(3), S3C_GPIO_OUTPUT);
 	s3c_gpio_setpull(S5PV210_GPH2(3), S3C_GPIO_PULL_NONE);
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	gpio_set_value(S5PV210_GPH2(3), 1);
+#else
 	gpio_set_value(S5PV210_GPH2(3), 0);
+#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH3(0), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH3(0), S3C_GPIO_PULL_UP);
 
 	s3c_gpio_cfgpin(S5PV210_GPH3(3), S3C_GPIO_INPUT);
+#if defined(CONFIG_SAMSUNG_FASCINATE)
+	s3c_gpio_setpull(S5PV210_GPH3(3), S3C_GPIO_PULL_UP);
+#else
 	s3c_gpio_setpull(S5PV210_GPH3(3), S3C_GPIO_PULL_DOWN);
+#endif
 
 	s3c_gpio_cfgpin(S5PV210_GPH3(4), S3C_GPIO_INPUT);
 	s3c_gpio_setpull(S5PV210_GPH3(4), S3C_GPIO_PULL_DOWN);
@@ -4938,6 +5033,10 @@ static struct platform_device *aries_devices[] __initdata = {
 	&sec_device_btsleep,
 	&ram_console_device,
 	&sec_device_wifi,
+
+#ifdef CONFIG_SAMSUNG_FASCINATE
+	&opt_gp2a,
+#endif
 };
 
 static void __init aries_map_io(void)
@@ -5199,7 +5298,9 @@ static void __init aries_machine_init(void)
 	i2c_register_board_info(9, i2c_devs9, ARRAY_SIZE(i2c_devs9));
 
 	/* optical sensor */
+#ifndef CONFIG_SAMSUNG_FASCINATE
 	gp2a_gpio_init();
+#endif
 	i2c_register_board_info(11, i2c_devs11, ARRAY_SIZE(i2c_devs11));
 	
 	/* yamaha magnetic sensor */

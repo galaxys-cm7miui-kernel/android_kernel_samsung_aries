@@ -92,6 +92,13 @@ config INPUT_ORIENTATION
 	tristate "Yamaha Orientation Sensor"
 	depends on I2C
 
+config INPUT_YAMAHA
+	depends on I2C
+	tristate "YAMAHA"
+	help
+	  This option enables magnetic sensors using YAMAHA driver.
+	  It is optimized for s3c6410.
+
 config INPUT_PCSPKR
 	tristate "PC Speaker support"
 	depends on PCSPKR_PLATFORM
@@ -452,6 +459,13 @@ config OPTICAL_GP2A
 	default n
 	help
 	  This option enables proximity & light sensors using gp2a driver.
+
+config OPTICAL_GP2A_FROYO
+	depends on I2C && GENERIC_GPIO
+	tristate "GP2A ambient light and proximity input device"
+	default n
+	help
+	  This option enables proximity & light sensors using gp2a driver. (FroYo version)
 
 
 endif
