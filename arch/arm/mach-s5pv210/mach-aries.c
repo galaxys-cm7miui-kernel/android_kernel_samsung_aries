@@ -1256,7 +1256,7 @@ static void touch_keypad_gpio_sleep(int onoff){
 }
 
 static const int touch_keypad_code[] = {
-#if (defined (CONFIG_SAMSUNG_GALAXYS) && defined (!CONFIG_TELUS)) || defined (CONFIG_SAMSUNG_GALAXYSB)
+#if defined (CONFIG_SAMSUNG_GALAXYSB) || defined (CONFIG_SAMSUNG_GALAXYS) && !defined (CONFIG_TELUS)
 	KEY_MENU,
 	KEY_BACK,
 	0,
