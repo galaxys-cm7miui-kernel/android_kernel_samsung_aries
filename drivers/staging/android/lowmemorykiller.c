@@ -112,6 +112,17 @@ static int lowmem_shrink(struct shrinker *s, int nr_to_scan, gfp_t gfp_mask)
 	    time_before_eq(jiffies, lowmem_deathpending_timeout))
 		return 0;
 
+	/*
+	 * If we already have a death outstanding, then
+	 * bail out right away; indicating to vmscan
+	 * that we have nothing further to offer on
+	 * this pass.
+	 *
+	 */
+	if (lowmem_deathpending &&
+	    time_before_eq(jiffies, lowmem_deathpending_timeout))
+		return 0;
+
 	if (lowmem_adj_size < array_size)
 		array_size = lowmem_adj_size;
 	if (lowmem_minfree_size < array_size)
@@ -188,6 +199,12 @@ static int lowmem_shrink(struct shrinker *s, int nr_to_scan, gfp_t gfp_mask)
 			     p->pid, p->comm, oom_adj, tasksize);
 	}
 	if (selected) {
+		if (fatal_signal_pending(selected)) {
+			pr_warning("process %d is suffering a slow death\n",
+				   selected->pid);
+			read_unlock(&tasklist_lock);
+			return rem;
+		}
 		lowmem_print(1, "send sigkill to %d (%s), adj %d, size %d\n",
 			     selected->pid, selected->comm,
 			     selected_oom_adj, selected_tasksize);
