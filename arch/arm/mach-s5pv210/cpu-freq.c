@@ -50,7 +50,7 @@ static unsigned int backup_freq_level;
 static unsigned int mpll_freq; /* in MHz */
 static unsigned int apll_freq_max; /* in MHz */
 static DEFINE_MUTEX(set_freq_lock);
-#define GPU_OC 0
+#define GPU_OC 1
 
 /* frequency */
 
