@@ -262,7 +262,7 @@ static void cypress_touchkey_early_resume(struct early_suspend *h)
 		return;
 	}
 	devdata->is_dead = false;
-	enable_irq(devdata->client->irq);
+/*	enable_irq(devdata->client->irq); */
 	devdata->is_powering_on = false;
 #ifdef CONFIG_KEYPAD_CYPRESS_TOUCH_USE_BLN
 	if(time != 0) 
