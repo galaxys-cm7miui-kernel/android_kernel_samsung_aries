@@ -6,20 +6,25 @@ cp arch/arm/configs/aries_captivatemtd_defconfig .config
 echo "building with stock toolchain"
 make -j8
 
-echo "copying modem drivers"
+echo "copying prebuilt drivers"
 cd drivers/misc/samsung_modemctl
 cp built-in.o built-in.2009q3_samsung_modemctl
 cd modemctl
 cp built-in.o built-in.2009q3_samsung_modemctl
+cd ../../../input/keyboard
+cp built-in.o built-in.2009q3_samsung_modemctl
+
 
 echo "cleaning up"
-cd ../../../..
+cd ../../..
 make clean
 cd drivers/misc/samsung_modemctl
 cp built-in.2009q3_samsung_modemctl built-in.o
 cd modemctl
 cp built-in.2009q3_samsung_modemctl built-in.o
-cd ../../../..
+cd ../../../../drivers/input/keyboard
+cp built-in.2009q3_samsung_modemctl built-in.o
+cd ../../..
 
 echo "switching makefiles"
 cp Makefile Makefile.stock
@@ -31,6 +36,9 @@ cd ../../../arch/arm
 cp Makefile Makefile.stock
 cp Makefile.toolchain Makefile
 cd vfp
+cp Makefile Makefile.stock
+cp Makefile.toolchain Makefile
+cd ../../../drivers/input/keyboard
 cp Makefile Makefile.stock
 cp Makefile.toolchain Makefile
 cd ../../..
@@ -46,6 +54,8 @@ cp Makefile.stock Makefile
 cd ../../../arch/arm
 cp Makefile.stock Makefile
 cd vfp
+cp Makefile.stock Makefile
+cd ../../../drivers/input/keyboard
 cp Makefile.stock Makefile
 cd ../../..
 
