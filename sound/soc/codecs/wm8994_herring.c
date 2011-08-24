@@ -289,7 +289,7 @@ struct gain_info_t cdma_voicecall_gain_table[VOICECALL_GAIN_NUM] = {
 		.mode = VOICECALL_RCV,
 		.reg  = WM8994_LEFT_LINE_INPUT_1_2_VOLUME,	/* 18h */
 		.mask = WM8994_IN1L_VOL_MASK,
-		.gain = WM8994_IN1L_VU | 0x0C   /* +15dB */
+		.gain = WM8994_IN1L_VU | 0x13   /* +12 dB mic gain*/
 	}, {
 		.mode = VOICECALL_RCV,
 		.reg  = WM8994_INPUT_MIXER_3,		/* 29h */
@@ -329,7 +329,7 @@ struct gain_info_t cdma_voicecall_gain_table[VOICECALL_GAIN_NUM] = {
 		.mode = VOICECALL_SPK,
 		.reg  = WM8994_LEFT_LINE_INPUT_1_2_VOLUME,	/* 18h */
 		.mask = WM8994_IN1L_VOL_MASK,
-		.gain = WM8994_IN1L_VU | 0x12   /* Mic +30dB */
+		.gain = WM8994_IN1L_VU | 0x1f   /* Mic +30dB */
 	}, {
 		.mode = VOICECALL_SPK,
 		.reg  = WM8994_SPKMIXL_ATTENUATION,	/* 22h */
@@ -419,7 +419,7 @@ struct gain_info_t cdma_voicecall_gain_table[VOICECALL_GAIN_NUM] = {
 		.mode = VOICECALL_TTY_VCO,
 		.reg  = WM8994_LEFT_LINE_INPUT_1_2_VOLUME,	/* 18h */
 		.mask = WM8994_IN1L_VOL_MASK,
-		.gain = WM8994_IN1L_VU | 0x15	/* +10.5dB */
+		.gain = WM8994_IN1L_VU | 0x15	/* +15dB */
 	}, {
 		.mode = VOICECALL_TTY_VCO,
 		.reg  = WM8994_INPUT_MIXER_3,		/* 29h */
@@ -762,20 +762,12 @@ struct gain_info_t voicecall_gain_table[VOICECALL_GAIN_NUM] = {
 		.mode = VOICECALL_SPK,
 		.reg  = WM8994_INPUT_MIXER_3,		/* 29h */
 		.mask = WM8994_IN1L_MIXINL_VOL_MASK | WM8994_MIXOUTL_MIXINL_VOL_MASK,
-#ifdef CONFIG_SAMSUNG_FASCINATE
-		.gain = 0x12     /* Mic +?dB */
-#else
-		.gain = 0x10     /* Mic +7.5dB */
-#endif
+		.gain = 0x10     /* +30db */
 	}, {
 		.mode = VOICECALL_SPK,
 		.reg  = WM8994_LEFT_LINE_INPUT_1_2_VOLUME,	/* 18h */
 		.mask = WM8994_IN1L_VOL_MASK,
-#ifdef CONFIG_SAMSUNG_FASCINATE
-		.gain = WM8994_IN1L_VU | 0x16   /* Mic +?dB */
-#else
-		.gain = WM8994_IN1L_VU | 0x12   /* Mic +30dB */
-#endif
+		.gain = WM8994_IN1L_VU | 0x1f   /* Mic +30dB */
 	}, {
 		.mode = VOICECALL_SPK,
 		.reg  = WM8994_SPKMIXL_ATTENUATION,	/* 22h */
@@ -835,7 +827,7 @@ struct gain_info_t voicecall_gain_table[VOICECALL_GAIN_NUM] = {
 		.mode = VOICECALL_HP_NO_MIC,
 		.reg  = WM8994_LEFT_LINE_INPUT_1_2_VOLUME,	/* 18h */
 		.mask = WM8994_IN1L_VOL_MASK,
-		.gain = WM8994_IN1L_VU | 0x12	/* +10.5dB */
+		.gain = WM8994_IN1L_VU | 0x15	/* +10.5dB */
 	}, {
 		.mode = VOICECALL_HP_NO_MIC,
 		.reg  = WM8994_INPUT_MIXER_3,		/* 29h */
@@ -2786,7 +2778,9 @@ static void wm8994_set_cdma_voicecall_receiver(struct snd_soc_codec *codec)
 	wm8994_write(codec, 0x0621, 0x01C0);	/* Sidetone */
 	wm8994_write(codec, 0x0002, 0x6240);	/* Power Management 2 */
 	wm8994_write(codec, 0x0028, 0x0030);	/* Input Mixer 2 */
-	wm8994_write(codec, 0x0018, 0x010A);
+	
+	/* mic gain setting */
+	wm8994_write(codec, 0x0018, WM8994_IN1L_VU | WM8994_IN1L_VOL_12dB);
 
 	/* Output Mixer 5 */
 	val = wm8994_read(codec, 0x0031);
@@ -2803,15 +2797,14 @@ static void wm8994_set_cdma_voicecall_receiver(struct snd_soc_codec *codec)
 	/* Left OPGA Volume */
 	val = wm8994_read(codec, 0x0020);
 	val &= ~(WM8994_MIXOUTL_MUTE_N_MASK | WM8994_MIXOUTL_VOL_MASK);
-	val |= (0x0100 | 0x0040 | 0x3D);
-	/* 05.24 Maximum ´ëºñ -6dB HAC ¿ë test -2 3B -> 39 */
-	wm8994_write(codec, 0x0020, 0x01F9);
+	val |= (0x0100 | 0x0040 | 0x3f);
+	wm8994_write(codec, 0x0020, val);
 
 	/* Right OPGA Volume */
 	val = wm8994_read(codec, 0x0021);
 	val &= ~(WM8994_MIXOUTR_MUTE_N_MASK | WM8994_MIXOUTR_VOL_MASK);
-	val |= (0x0100 | 0x0040 | 0x3D);
-	wm8994_write(codec, 0x0021, 0x01F9);
+	val |= (0x0100 | 0x0040 | 0x3f);
+	wm8994_write(codec, 0x0021, val);
 
 	wm8994_write(codec, 0x0312, 0x0000);	/* Slave */
 	/* sub mic */
