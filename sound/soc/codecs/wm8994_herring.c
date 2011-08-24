@@ -2762,9 +2762,13 @@ static void wm8994_set_cdma_voicecall_receiver(struct snd_soc_codec *codec)
 
 	wm8994_write(codec, 0x0620, 0x0000);	/* Oversampling */
 	wm8994_write(codec, 0x0211, 0x0003);	/* AIF2 Rate */
-	wm8994_write(codec, 0x0310, 0x4118);	/* AIF2 Control 1 */
+	
+	wm8994_write(codec, 0x0310, 0x4118);	/* AIF2 Control 1 */	
 	/* AIF2 Control 2 pcm format is changed ulaw to linear */
-	wm8994_write(codec, 0x0311, 0x0000);
+	
+	// BC if this is our voice PCM input, lets see if we can give it a boost ..
+	wm8994_write(codec, 0x0311, 0x0C00);
+	
 	wm8994_write(codec, 0x0520, 0x0000);	/* AIF2 DAC Filter 1 */
 	/* AIF2 Clocking 1. AIF2 Clock Enable */
 	wm8994_write(codec, 0x0204, 0x0009);
