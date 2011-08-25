@@ -1511,7 +1511,9 @@ void wm8994_set_bluetooth_common_setting(struct snd_soc_codec *codec)
 		WM8994_AIF2ADCR_SRC | WM8994_AIF2_BCLK_INV | 0x18);
 
 	wm8994_write(codec, WM8994_AIF2_BCLK, 0x70);
-	wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0000);
+	
+	// boost incoming call volume
+	wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0C00);
 	wm8994_write(codec, WM8994_AIF2_MASTER_SLAVE, WM8994_AIF2_MSTR |
 		WM8994_AIF2_CLK_FRC | WM8994_AIF2_LRCLK_FRC);
 
@@ -2521,7 +2523,7 @@ static void wm8994_set_cdma_voicecall_common_setting(struct snd_soc_codec *codec
 	wm8994_write(codec, WM8994_FLL2_CONTROL_5, 0x0C81);
 	wm8994_write(codec, WM8994_FLL2_CONTROL_1,	0x0001);
 
-	wm8994_write(codec, 0x0311, 0x0C00); // boost the incoming call volume
+	
 
 	val = wm8994_read(codec, WM8994_AIF2_CLOCKING_1);
 	if (!(val & WM8994_AIF2CLK_ENA))
@@ -2534,7 +2536,10 @@ static void wm8994_set_cdma_voicecall_common_setting(struct snd_soc_codec *codec
 	wm8994_write(codec, WM8994_AIF2_CONTROL_1, 0x4118);
 
 	wm8994_write(codec, WM8994_AIF2_BCLK, 0x70);
-	wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0000);
+	
+	// enable aif2dac2 boost for better call volume
+	wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0C00);
+	
 	wm8994_write(codec, WM8994_AIF2_MASTER_SLAVE, 0);
 
 	val = wm8994_read(codec, WM8994_POWER_MANAGEMENT_5);
@@ -2591,7 +2596,6 @@ static void wm8994_set_gsm_voicecall_common_setting(struct snd_soc_codec *codec)
 	wm8994_write(codec, WM8994_FLL2_CONTROL_1,
 		WM8994_FLL2_FRACN_ENA | WM8994_FLL2_ENA);
 
-	wm8994_write(codec, 0x0311, 0x0C00); // boost the incoming call volume
 
 	val = wm8994_read(codec, WM8994_AIF2_CLOCKING_1);
 	if (!(val & WM8994_AIF2CLK_ENA))
@@ -2605,7 +2609,9 @@ static void wm8994_set_gsm_voicecall_common_setting(struct snd_soc_codec *codec)
 		WM8994_AIF2ADCR_SRC | WM8994_AIF2_BCLK_INV | 0x18);
 
 	wm8994_write(codec, WM8994_AIF2_BCLK, 0x70);
-	wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0000);
+	
+	// enable aif2dac2 boost for in call volume
+	wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0C00);
 	wm8994_write(codec, WM8994_AIF2_MASTER_SLAVE, WM8994_AIF2_MSTR |
 		WM8994_AIF2_CLK_FRC | WM8994_AIF2_LRCLK_FRC);
 
