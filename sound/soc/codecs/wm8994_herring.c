@@ -34,6 +34,8 @@
 /*
  * Definitions of tunning volumes for wm8994
  */
+ 
+static const int incallBoost = 0x0c00;
 
 struct gain_info_t cdma_playback_gain_table[PLAYBACK_GAIN_NUM] = {
 	{ /* COMMON */
@@ -344,7 +346,7 @@ struct gain_info_t cdma_voicecall_gain_table[VOICECALL_GAIN_NUM] = {
 		.mode = VOICECALL_SPK,
 		.reg  = WM8994_SPEAKER_VOLUME_LEFT,	/* 26h */
 		.mask = WM8994_SPKOUTL_VOL_MASK,
-		.gain = WM8994_SPKOUT_VU | 0x3F    /* Left Speaker +3dB */
+		.gain = WM8994_SPKOUT_VU | 0x3f    /* Left Speaker +3dB */
 	}, {
 		.mode = VOICECALL_SPK,
 		.reg  = WM8994_SPEAKER_VOLUME_RIGHT,	/* 27h */
@@ -354,7 +356,7 @@ struct gain_info_t cdma_voicecall_gain_table[VOICECALL_GAIN_NUM] = {
 		.mode = VOICECALL_SPK,
 		.reg  = WM8994_CLASSD,			/* 25h */
 		.mask = WM8994_SPKOUTL_BOOST_MASK,
-		.gain = 0x7 << WM8994_SPKOUTL_BOOST_SHIFT /* Left spaker +12dB */
+		.gain = 0x6 << WM8994_SPKOUTL_BOOST_SHIFT /* Left spaker +12dB */
 	}, { /* HP */
 		.mode = VOICECALL_HP,
 		.reg  = WM8994_RIGHT_LINE_INPUT_1_2_VOLUME,	/* 1Ah */
@@ -1513,7 +1515,7 @@ void wm8994_set_bluetooth_common_setting(struct snd_soc_codec *codec)
 	wm8994_write(codec, WM8994_AIF2_BCLK, 0x70);
 	
 	// boost incoming call volume
-	wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0C00);
+	wm8994_write(codec, WM8994_AIF2_CONTROL_2, incallBoost);
 	wm8994_write(codec, WM8994_AIF2_MASTER_SLAVE, WM8994_AIF2_MSTR |
 		WM8994_AIF2_CLK_FRC | WM8994_AIF2_LRCLK_FRC);
 
@@ -2538,7 +2540,7 @@ static void wm8994_set_cdma_voicecall_common_setting(struct snd_soc_codec *codec
 	wm8994_write(codec, WM8994_AIF2_BCLK, 0x70);
 	
 	// enable aif2dac2 boost for better call volume
-	wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0C00);
+	wm8994_write(codec, WM8994_AIF2_CONTROL_2, incallBoost);
 	
 	wm8994_write(codec, WM8994_AIF2_MASTER_SLAVE, 0);
 
@@ -2611,7 +2613,7 @@ static void wm8994_set_gsm_voicecall_common_setting(struct snd_soc_codec *codec)
 	wm8994_write(codec, WM8994_AIF2_BCLK, 0x70);
 	
 	// enable aif2dac2 boost for in call volume
-	wm8994_write(codec, WM8994_AIF2_CONTROL_2, 0x0C00);
+	wm8994_write(codec, WM8994_AIF2_CONTROL_2, incallBoost);
 	wm8994_write(codec, WM8994_AIF2_MASTER_SLAVE, WM8994_AIF2_MSTR |
 		WM8994_AIF2_CLK_FRC | WM8994_AIF2_LRCLK_FRC);
 
@@ -2777,7 +2779,7 @@ static void wm8994_set_cdma_voicecall_receiver(struct snd_soc_codec *codec)
 	/* AIF2 Control 2 pcm format is changed ulaw to linear */
 	
 	// boost the incoming voice volume a bit
-	wm8994_write(codec, 0x0311, 0x0C00);
+	wm8994_write(codec, 0x0311, incallBoost);
 	
 	wm8994_write(codec, 0x0520, 0x0000);	/* AIF2 DAC Filter 1 */
 	/* AIF2 Clocking 1. AIF2 Clock Enable */
