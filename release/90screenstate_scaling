@@ -13,15 +13,12 @@
 
 GLITCH_DIR=/system/etc/glitch-config
 
-# if our config directory is not there, create it and populate it with
-# reasonable defaults. Otherwise, we'll pay attn to what the user has there
+# if our config directory is not there ..
 if [ ! -d $GLITCH_DIR ]
 then
     # oops! default to off because this means the kernel probably didn't flash right?!?
     SCREENSTATE_SCALING_ACTIVE="inactive"
-else
-
-    # set this to "active" to use this stuff
+else    
     SCREENSTATE_SCALING_ACTIVE=`cat ${GLITCH_DIR}/screenstate_scaling`
     # use the one configured
     SLEEP_GOVERNOR=`cat ${GLITCH_DIR}/sleep_governor`
@@ -120,6 +117,8 @@ AWAKE=
 	SLEEPING=
     fi
 
+    # see if we've somehow been disabled since the last time. This would be weird, but
+    # not entirely out of the realm of possibility.
     SCREENSTATE_SCALING_ACTIVE=`cat ${GLITCH_DIR}/screenstate_scaling`
     
 done &)
