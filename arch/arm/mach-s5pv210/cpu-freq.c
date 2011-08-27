@@ -68,7 +68,7 @@ static struct cpufreq_frequency_table freq_table[] = {
 	{0, CPUFREQ_TABLE_END},
 };
 
-extern int exp_UV_mV[11]; //Needed for uv
+extern int exp_UV_mV[11];
 unsigned int freq_uv_table[11][3] = {
 	//freq, stock, current
 	{1600000,	1500,	1500},
@@ -83,8 +83,6 @@ unsigned int freq_uv_table[11][3] = {
 	{200000,	950,	950},
 	{100000,	950,	950}
 };
-//extern int enabled_freqs[8];
-//extern int update_states = 0;
 
 struct s5pv210_dvs_conf {
 	unsigned long       arm_volt;   /* uV */
@@ -102,7 +100,6 @@ static unsigned int g_dvfslockval[DVFS_LOCK_TOKEN_NUM];
 const unsigned long arm_volt_max = 1550000;
 const unsigned long int_volt_max = 1250000;
 
-// added more voltage levels for the added frequencies
 static struct s5pv210_dvs_conf dvs_conf[] = {
 	[L0] = {
 		.arm_volt   = 1500000,
@@ -149,8 +146,7 @@ static struct s5pv210_dvs_conf dvs_conf[] = {
 		.int_volt   = 1000000,
 	},
 };
-
-//more clocks 
+ 
 static u32 clkdiv_val[11][11] = {
 	/*{ APLL, A2M, HCLK_MSYS, PCLK_MSYS,
 	 * HCLK_DSYS, PCLK_DSYS, HCLK_PSYS, PCLK_PSYS, ONEDRAM,
@@ -180,7 +176,6 @@ static u32 clkdiv_val[11][11] = {
 	{7, 7, 0, 0, 7, 0, 9, 0, 7, 0, 0},
 };
 
-//And even more clocks
 static struct s3c_freq clk_info[] = {
 	[L0] = {        /* L0: 1.6GHz */
                 .fclk       = 1600000,
@@ -409,7 +404,6 @@ static void s5pv210_cpufreq_clksrcs_MPLL2APLL(unsigned int index,
 	 * 2-1. Set PMS values
 	 */
 
-//Fixed up the 1200mhz overclock (Thanks netarchy!)
 	if (index == L0)
 		__raw_writel(PLL45XX_APLL_VAL_1600, S5P_APLL_CON);
 	else if (index == L1)
@@ -681,11 +675,10 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 	}
 #endif
 
-	//Subtract the voltage in the undervolt table before supplying it to the cpu
-	//Got to multiply by 1000 to account for the conversion between SGS and NS
-	arm_volt = (dvs_conf[index].arm_volt - (exp_UV_mV[index]*1000));
-	//freq_uv_table[index][2] =(int) arm_volt / 1000;
-	//arm_volt = dvs_conf[index].arm_volt;
+	if(exp_UV_mV[index] > -50) 
+		exp_UV_mV[index] = -50;
+	arm_volt = dvs_conf[index].arm_volt - (exp_UV_mV[index]*1000);
+	
 	int_volt = dvs_conf[index].int_volt;
 
 	/* New clock information update */
@@ -872,9 +865,10 @@ static int s5pv210_cpufreq_target(struct cpufreq_policy *policy,
 	memcpy(&s3c_freqs.old, &s3c_freqs.new, sizeof(struct s3c_freq));
 	cpufreq_debug_printk(CPUFREQ_DEBUG_DRIVER, KERN_INFO,
 			"cpufreq: Performance changed[L%d]\n", index);
-//more uv
+	if(exp_UV_mV[index] < -50)
+		exp_UV_mV[index] = -50; 
 	previous_arm_volt = (dvs_conf[index].arm_volt - (exp_UV_mV[index] * 1000));
-	//freq_uv_table[index][2] = (int) previous_arm_volt / 1000;
+
 
 	if (first_run)
 		first_run = false;
@@ -917,9 +911,10 @@ static int s5pv210_cpufreq_resume(struct cpufreq_policy *policy)
 
 	memcpy(&s3c_freqs.old, &clk_info[level],
 			sizeof(struct s3c_freq));
-//even more uv
+	if(exp_UV_mV[level] < -50) 
+		exp_UV_mV[level] = -50;
 	previous_arm_volt = (dvs_conf[level].arm_volt - (exp_UV_mV[level]*1000));
-	//freq_uv_table[level][2] = (int) previous_arm_volt / 1000;
+
 
 	return ret;
 }
@@ -987,17 +982,15 @@ static int __init s5pv210_cpufreq_driver_init(struct cpufreq_policy *policy)
 
 	memcpy(&s3c_freqs.old, &clk_info[level],
 			sizeof(struct s3c_freq));
-//is dat some more uv?
+	if(exp_UV_mV[level] < -50)
+		exp_UV_mV[level] = -50;
 	previous_arm_volt = (dvs_conf[level].arm_volt - (exp_UV_mV[level]*1000));
-	freq_uv_table[level][2] = (int) previous_arm_volt / 1000;
-
 #ifdef CONFIG_DVFS_LIMIT
 	for(i = 0; i < DVFS_LOCK_TOKEN_NUM; i++)
 		g_dvfslockval[i] = MAX_PERF_LEVEL;
 #endif
 
 	cpufreq_frequency_table_cpuinfo(policy, freq_table);
-//Set initial max speed to 1ghz for people who don't want to overclock
 	policy->max = 1000000;
 	policy->min = 100000;
 	return 0;
@@ -1006,29 +999,29 @@ static int __init s5pv210_cpufreq_driver_init(struct cpufreq_policy *policy)
 static int s5pv210_cpufreq_notifier_event(struct notifier_block *this,
 		unsigned long event, void *ptr)
 {
-//	static int max, min;
+	static int max, min;
 	int ret;
 
-//	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
 
 	switch (event) {
 	case PM_SUSPEND_PREPARE:
-	ret = cpufreq_driver_target(cpufreq_cpu_get(0), SLEEP_FREQ,
-/*		max = policy->max;
+//	ret = cpufreq_driver_target(cpufreq_cpu_get(0), SLEEP_FREQ,
+		max = policy->max;
 		min = policy->min;
 		policy->max = 400000;
-		ret = cpufreq_driver_target(policy, SLEEP_FREQ,*/
+		ret = cpufreq_driver_target(policy, SLEEP_FREQ,
 				DISABLE_FURTHER_CPUFREQ);
 		if (ret < 0)
 			return NOTIFY_BAD;
 		return NOTIFY_OK;
 	case PM_POST_RESTORE:
 	case PM_POST_SUSPEND:
-		cpufreq_driver_target(cpufreq_cpu_get(0), SLEEP_FREQ,
-//		cpufreq_driver_target(policy, SLEEP_FREQ,
+//		cpufreq_driver_target(cpufreq_cpu_get(0), SLEEP_FREQ,
+		cpufreq_driver_target(policy, SLEEP_FREQ,
 				ENABLE_FURTHER_CPUFREQ);
-/*		policy->max = max;
-		policy->min = min;*/
+		policy->max = max;
+		policy->min = min;
 		return NOTIFY_OK;
 	}
 	return NOTIFY_DONE;
