@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 6
 SUBLEVEL = 35
-EXTRAVERSION = .13_Glitch-V12-DEV
+EXTRAVERSION = .13_Glitch-V13-DEV
 NAME = Yokohama
 
 # *DOCUMENTATION*
@@ -332,14 +332,13 @@ CHECK		= sparse
 
 CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 		  -Wbitwise -Wno-return-void $(CF)
-MODFLAGS	= -DMODULE -finline-functions -funswitch-loops -fpredictive-commoning -fgcse-after-reload -ftree-vectorize -fipa-cp-clone -ffast-math -fsingle-precision-constant -pipe -mtune=cortex-a8 -mfpu=neon
-CFLAGS_MODULE   = $(MODFLAGS)
-AFLAGS_MODULE   = $(MODFLAGS)
+MODFLAGS	= -DMODULE
+CFLAGS_MODULE   = $(MODFLAGS) -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone
+AFLAGS_MODULE   = $(MODFLAGS) -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone
 LDFLAGS_MODULE  = -T $(srctree)/scripts/module-common.lds
-CFLAGS_KERNEL	= -finline-functions -funswitch-loops -fpredictive-commoning -fgcse-after-reload -ftree-vectorize -fipa-cp-clone -ffast-math -fsingle-precision-constant -pipe -mtune=cortex-a8 -mfpu=neon
-AFLAGS_KERNEL	=
+CFLAGS_KERNEL	= -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone
+AFLAGS_KERNEL	= -mtune=cortex-a8 -mfpu=vfpv3 --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 -fsched-spec-load-dangerous -fpredictive-commoning -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
-
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
 # Needed to be compatible with the O= option
@@ -356,7 +355,9 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-delete-null-pointer-checks \
 		   --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32 \
 		   -fsched-spec-load-dangerous -fpredictive-commoning \
-		   -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone
+		   -fira-coalesce -funswitch-loops -ftree-loop-im -fipa-cp-clone \
+		   -mtune=cortex-a8 -mfpu=vfpv3 \
+		   --param l2-cache-size=256 --param l1-cache-size=16 --param simultaneous-prefetches=8 --param prefetch-latency=200 --param l1-cache-line-size=32
 KBUILD_AFLAGS   := -D__ASSEMBLY__
 
 # Read KERNELRELEASE from include/config/kernel.release (if it exists)
